@@ -13,6 +13,12 @@ const NewsletterPage = () => {
     setStatus('loading');
 
     try {
+      // Use a simple validation before submitting
+      if (!email || !email.includes('@')) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      // Attempt to insert the email into the newsletter_subscribers table
       const { error } = await supabase
         .from('newsletter_subscribers')
         .insert([{ email }]);
@@ -22,9 +28,10 @@ const NewsletterPage = () => {
       setStatus('success');
       setMessage('Thanks for subscribing! Check your inbox for updates.');
       setEmail('');
-    } catch (error) {
+    } catch (error: any) {
       setStatus('error');
-      setMessage('Error subscribing. Please try again.');
+      setMessage(error.message || 'Error subscribing. Please try again.');
+      console.error('Newsletter subscription error:', error);
     }
   };
 
