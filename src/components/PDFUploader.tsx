@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FileText, Upload, Loader } from 'lucide-react';
+import { FileText, Upload, Loader, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { extractTextFromPDF } from '../lib/pdf';
 
@@ -11,18 +11,32 @@ interface PDFUploaderProps {
 
 export const PDFUploader: React.FC<PDFUploaderProps> = ({ onTextExtracted, onError }) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const onDrop = async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
 
+    // Check file size (limit to 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File is too large. Maximum size is 10MB.');
+      return;
+    }
+
     setIsProcessing(true);
+    setUploadError(null);
+    
     try {
       const pages = await extractTextFromPDF(file);
+      if (pages.length === 0) {
+        throw new Error('No text could be extracted from the PDF.');
+      }
       onTextExtracted(pages);
     } catch (error) {
-      onError('Error processing PDF. Please try again.');
       console.error('PDF processing error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error processing PDF. Please try a different file.';
+      setUploadError(errorMessage);
+      onError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -86,6 +100,17 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({ onTextExtracted, onErr
           )}
         </div>
       </div>
+
+      {uploadError && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg flex items-center"
+        >
+          <AlertCircle className="w-5 h-5 mr-2" />
+          {uploadError}
+        </motion.div>
+      )}
     </motion.div>
   );
 };
