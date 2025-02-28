@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FileText, Upload, Loader, AlertCircle } from 'lucide-react';
+import { FileText, Upload, Loader, AlertCircle, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { extractTextFromPDF } from '../lib/pdf';
 
@@ -12,6 +12,7 @@ interface PDFUploaderProps {
 export const PDFUploader: React.FC<PDFUploaderProps> = ({ onTextExtracted, onError }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadInfo, setUploadInfo] = useState<string | null>(null);
 
   const onDrop = async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -20,23 +21,28 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({ onTextExtracted, onErr
     // Check file size (limit to 10MB)
     if (file.size > 10 * 1024 * 1024) {
       setUploadError('File is too large. Maximum size is 10MB.');
+      onError('File is too large. Maximum size is 10MB.');
       return;
     }
 
     setIsProcessing(true);
     setUploadError(null);
+    setUploadInfo(`Processing ${file.name}...`);
     
     try {
       const pages = await extractTextFromPDF(file);
       if (pages.length === 0) {
         throw new Error('No text could be extracted from the PDF.');
       }
+      
+      setUploadInfo(null);
       onTextExtracted(pages);
     } catch (error) {
       console.error('PDF processing error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error processing PDF. Please try a different file.';
       setUploadError(errorMessage);
       onError(errorMessage);
+      setUploadInfo(null);
     } finally {
       setIsProcessing(false);
     }
@@ -95,11 +101,25 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({ onTextExtracted, onErr
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                   Maximum file size: 10MB
                 </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Supported: Text-based PDFs (not scanned documents)
+                </p>
               </div>
             </>
           )}
         </div>
       </div>
+
+      {uploadInfo && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 rounded-lg flex items-center"
+        >
+          <Info className="w-5 h-5 mr-2" />
+          {uploadInfo}
+        </motion.div>
+      )}
 
       {uploadError && (
         <motion.div
@@ -111,6 +131,19 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({ onTextExtracted, onErr
           {uploadError}
         </motion.div>
       )}
+
+      <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 rounded-lg">
+        <h3 className="font-medium flex items-center">
+          <Info className="w-5 h-5 mr-2" />
+          PDF Processing Tips
+        </h3>
+        <ul className="mt-2 list-disc list-inside text-sm space-y-1">
+          <li>Only text-based PDFs are supported (not scanned documents)</li>
+          <li>Make sure your PDF is not password-protected</li>
+          <li>If you're having issues, try a different PDF file</li>
+          <li>For scanned documents, use OCR software first to convert to text</li>
+        </ul>
+      </div>
     </motion.div>
   );
 };
