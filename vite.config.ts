@@ -1,13 +1,25 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
     exclude: ['lucide-react'],
+    esbuildOptions: {
+      target: 'esnext'
+    }
   },
   build: {
-    target: 'esnext' // Update target to support top-level await
+    target: 'esnext',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'pdf': ['pdfjs-dist']
+        }
+      }
+    }
+  },
+  esbuild: {
+    target: 'esnext'
   }
 });
