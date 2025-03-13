@@ -52,10 +52,12 @@ export async function extractTextFromPDF(file: File): Promise<string[]> {
     // Provide a more specific error message based on the error type
     if (error instanceof TypeError) {
       throw new Error('Invalid PDF format. Please ensure you are uploading a valid PDF file.');
-    } else if (error.message && error.message.includes('password')) {
+    } else if (error instanceof Error && error.message.includes('password')) {
       throw new Error('This PDF is password-protected. Please upload an unprotected PDF.');
-    } else if (error.message && error.message.includes('corrupt')) {
+    } else if (error instanceof Error && error.message.includes('corrupt')) {
       throw new Error('The PDF file appears to be corrupted. Please try a different file.');
+    } else if (error instanceof Error) {
+      throw error;
     } else {
       throw new Error('Failed to process PDF. Please try a different file or check if the file is not corrupted or password-protected.');
     }
