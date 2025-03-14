@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
-import { Brain, Plus, RotateCcw, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { Brain, Plus, RotateCcw, ChevronLeft, ChevronRight, Pencil, FileUp } from 'lucide-react';
 import FlashCard from './components/FlashCard';
 import AddCardModal from './components/AddCardModal';
+import PDFImport from './components/PDFImport';
 import { Card } from './types';
 
 function App() {
   const [cards, setCards] = useState<Card[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPDFModalOpen, setIsPDFModalOpen] = useState(false);
   const [isStudyMode, setIsStudyMode] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
 
   const addCard = (front: string, back: string) => {
     setCards([...cards, { front, back, id: Date.now() }]);
     setIsModalOpen(false);
+  };
+
+  const addCardsFromPDF = (newCards: Array<{ front: string; back: string }>) => {
+    const cardsWithIds = newCards.map(card => ({
+      ...card,
+      id: Date.now() + Math.random()
+    }));
+    setCards([...cards, ...cardsWithIds]);
   };
 
   const editCard = (id: number, front: string, back: string) => {
@@ -65,13 +75,22 @@ function App() {
               {isStudyMode ? 'Edit Mode' : 'Study Mode'}
             </button>
             {!isStudyMode && (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-xl hover:from-orange-600 hover:to-pink-600 transition-all duration-300 flex items-center gap-2 shadow-lg shadow-orange-500/20"
-              >
-                <Plus className="w-5 h-5" />
-                Add Card
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsPDFModalOpen(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                >
+                  <FileUp className="w-5 h-5" />
+                  Import PDF
+                </button>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-xl hover:from-orange-600 hover:to-pink-600 transition-all duration-300 flex items-center gap-2 shadow-lg shadow-orange-500/20"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add Card
+                </button>
+              </div>
             )}
           </div>
 
@@ -81,13 +100,22 @@ function App() {
                 <Brain className="w-16 h-16 text-purple-500 mx-auto mb-4" />
                 <p className="text-gray-400 text-lg mb-6">Create your first flashcard to begin learning</p>
               </div>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 inline-flex items-center gap-2 shadow-lg shadow-purple-500/20"
-              >
-                <Plus className="w-5 h-5" />
-                Create your first card
-              </button>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setIsPDFModalOpen(true)}
+                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 inline-flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                >
+                  <FileUp className="w-5 h-5" />
+                  Import from PDF
+                </button>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 inline-flex items-center gap-2 shadow-lg shadow-purple-500/20"
+                >
+                  <Plus className="w-5 h-5" />
+                  Create manually
+                </button>
+              </div>
             </div>
           ) : isStudyMode ? (
             <div className="relative">
@@ -162,6 +190,12 @@ function App() {
         onAdd={addCard}
         onEdit={editCard}
         editCard={editingCard}
+      />
+
+      <PDFImport
+        isOpen={isPDFModalOpen}
+        onClose={() => setIsPDFModalOpen(false)}
+        onExtract={addCardsFromPDF}
       />
     </div>
   );
