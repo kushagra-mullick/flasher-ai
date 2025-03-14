@@ -14,17 +14,18 @@ const FlashCard: React.FC<FlashCardProps> = ({ front, back }) => {
       onClick={() => setIsFlipped(!isFlipped)}
     >
       <div
-        className={`relative w-full h-64 transition-transform duration-500 transform-style-3d ${
+        className={`relative w-full h-[400px] transition-transform duration-700 transform-style-3d ${
           isFlipped ? 'rotate-y-180' : ''
         }`}
       >
-        <div className="absolute w-full h-full backface-hidden bg-white rounded-xl shadow-lg p-6 flex items-center justify-center">
-          <p className="text-xl font-medium text-center">{front}</p>
+        <div className="absolute w-full h-full backface-hidden bg-gradient-to-b from-gray-900 to-black rounded-2xl shadow-2xl p-8 flex items-center justify-center border border-gray-800">
+          <p className="text-2xl font-medium text-center text-white">{front}</p>
         </div>
-        <div className="absolute w-full h-full backface-hidden bg-indigo-50 rounded-xl shadow-lg p-6 flex items-center justify-center rotate-y-180">
-          <p className="text-xl font-medium text-center">{back}</p>
+        <div className="absolute w-full h-full backface-hidden bg-gradient-to-b from-purple-900 to-black rounded-2xl shadow-2xl p-8 flex items-center justify-center rotate-y-180 border border-purple-800">
+          <p className="text-2xl font-medium text-center text-white">{back}</p>
         </div>
       </div>
+      <p className="text-center mt-6 text-gray-400">Click to flip</p>
     </div>
   );
 };

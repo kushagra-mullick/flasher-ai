@@ -1,14 +1,13 @@
-import OpenAI from 'openai';
+import { Configuration, OpenAIApi } from 'openai';
 import * as tf from '@tensorflow/tfjs';
 import * as use from '@tensorflow-models/universal-sentence-encoder';
 import { addDays, differenceInDays } from 'date-fns';
-import { Card, EnhancedCard, StudySession, StudyRecommendation } from '../types';
+import { Card, EnhancedCard, StudySession } from '../types';
 
-// Initialize OpenAI with a default mock key if the API key is not provided
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY || 'mock_key',
-  dangerouslyAllowBrowser: true
+const configuration = new Configuration({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
 });
+const openai = new OpenAIApi(configuration);
 
 let useModel: use.UniversalSentenceEncoder | null = null;
 async function loadUSEModel() {
@@ -37,116 +36,6 @@ export class AIService {
     }
   }
 
-  // Generate flashcards from text
-  async generateFlashcards(text: string, options: {
-    style: 'detailed' | 'concise';
-    topicFilter?: string;
-  } = { style: 'detailed' }): Promise<Card[]> {
-    try {
-      // Check if OpenAI API key is available
-      if (!import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY === 'your_openai_api_key_here') {
-        // Return mock data if no API key is provided
-        return this.generateMockFlashcards(text);
-      }
-
-      const prompt = this.createFlashcardPrompt(text, options);
-      const response = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert at creating educational flashcards. Create clear, accurate, and well-structured flashcards from the provided text."
-          },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
-      });
-
-      const content = response.choices[0].message?.content;
-      if (!content) throw new Error('No content generated');
-
-      return this.parseFlashcards(content);
-    } catch (error) {
-      console.error('Error generating flashcards:', error);
-      // Return mock data if there's an error
-      return this.generateMockFlashcards(text);
-    }
-  }
-
-  // Generate mock flashcards for development/testing
-  private generateMockFlashcards(text: string): Card[] {
-    return [
-      {
-        id: 1,
-        front: "What is a flashcard?",
-        back: "A card with information on both sides, used for learning and memorization."
-      },
-      {
-        id: 2,
-        front: "How do flashcards help with learning?",
-        back: "They use active recall and spaced repetition to improve memory retention."
-      },
-      {
-        id: 3,
-        front: "What is the best way to use flashcards?",
-        back: "Review them regularly, test yourself actively, and space out your practice sessions."
-      }
-    ];
-  }
-
-  private createFlashcardPrompt(text: string, options: {
-    style: 'detailed' | 'concise';
-    topicFilter?: string;
-  }): string {
-    const styleGuide = options.style === 'detailed'
-      ? 'Create detailed flashcards with comprehensive information'
-      : 'Create concise flashcards with key points only';
-
-    const topicFilter = options.topicFilter
-      ? `Focus on content related to: ${options.topicFilter}`
-      : 'Cover all important topics';
-
-    return `
-Create flashcards from the following text. ${styleGuide}. ${topicFilter}
-
-Format each flashcard as:
-Q: [Question]
-A: [Answer]
-
-Text:
-${text}
-
-Create flashcards that:
-1. Cover key concepts and important details
-2. Use clear, unambiguous language
-3. Are self-contained and make sense independently
-4. Progress from basic to advanced concepts
-5. Include relevant examples where appropriate
-
-Please format the output as multiple Q/A pairs.`;
-  }
-
-  private parseFlashcards(content: string): Card[] {
-    const cards: Card[] = [];
-    const pairs = content.split(/\n\n+/);
-
-    for (const pair of pairs) {
-      const question = pair.match(/Q:\s*(.*)/)?.[1];
-      const answer = pair.match(/A:\s*(.*)/)?.[1];
-
-      if (question && answer) {
-        cards.push({
-          id: Date.now() + cards.length,
-          front: question.trim(),
-          back: answer.trim()
-        });
-      }
-    }
-
-    return cards;
-  }
-
   // Adaptive Spaced Repetition
   calculateNextReview(card: EnhancedCard, performance: number): Date {
     const sr = card.spacedRepetition || {
@@ -173,11 +62,7 @@ Please format the output as multiple Q/A pairs.`;
   // AI Tutor Chat
   async getChatResponse(context: string, question: string): Promise<string> {
     try {
-      if (!import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY === 'your_openai_api_key_here') {
-        return "Please provide your OpenAI API key to use the AI tutor feature.";
-      }
-
-      const response = await openai.chat.completions.create({
+      const response = await openai.createChatCompletion({
         model: "gpt-4",
         messages: [
           {
@@ -193,21 +78,17 @@ Please format the output as multiple Q/A pairs.`;
         max_tokens: 150
       });
 
-      return response.choices[0].message?.content || "I couldn't generate a response.";
+      return response.data.choices[0].message?.content || "I couldn't generate a response.";
     } catch (error) {
       console.error('Error getting chat response:', error);
-      return "Sorry, I'm having trouble connecting to the AI service. Please try again later.";
+      throw error;
     }
   }
 
   // Auto-Summarization
   async generateSummary(text: string): Promise<string> {
     try {
-      if (!import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY === 'your_openai_api_key_here') {
-        return text;
-      }
-
-      const response = await openai.chat.completions.create({
+      const response = await openai.createChatCompletion({
         model: "gpt-4",
         messages: [
           {
@@ -223,7 +104,7 @@ Please format the output as multiple Q/A pairs.`;
         max_tokens: 100
       });
 
-      return response.choices[0].message?.content || text;
+      return response.data.choices[0].message?.content || text;
     } catch (error) {
       console.error('Error generating summary:', error);
       return text;

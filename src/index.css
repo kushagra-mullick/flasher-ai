@@ -2,14 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light dark;
-}
-
-html.dark {
-  color-scheme: dark;
-}
-
 @layer utilities {
   .perspective-1000 {
     perspective: 1000px;
@@ -26,14 +18,4 @@ html.dark {
   .rotate-y-180 {
     transform: rotateY(180deg);
   }
-}
-
-/* Dark mode styles */
-.dark body {
-  @apply bg-gray-900 text-white;
-}
-
-/* Light mode styles */
-.light body {
-  @apply bg-white text-gray-900;
 }
