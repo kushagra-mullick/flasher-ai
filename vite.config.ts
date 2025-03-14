@@ -21,5 +21,9 @@ export default defineConfig({
   },
   esbuild: {
     target: 'esnext'
+  },
+  // Ensure Vite handles the worker file correctly
+  worker: {
+    format: 'es'
   }
 });

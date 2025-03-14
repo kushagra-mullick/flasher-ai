@@ -1,8 +1,8 @@
 import * as PDFJS from 'pdfjs-dist';
+import PDFWorker from 'pdfjs-dist/build/pdf.worker.min.js?url';
 
-// Set the worker source path correctly
-const pdfjsVersion = '4.0.379'; // Use a specific version that we know exists
-PDFJS.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.js`;
+// Set the worker source path to our bundled worker file
+PDFJS.GlobalWorkerOptions.workerSrc = PDFWorker;
 
 export async function extractTextFromPDF(file: File): Promise<string[]> {
   try {
